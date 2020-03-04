@@ -20,10 +20,6 @@ data Config = Config { maxTries :: Int
 --
 -- Program
 --
-
-
-
-
           
 guessProg :: Members '[Input String, Input Int, Trace] r => Config -> Sem r [Bool]
 guessProg config = go True []
