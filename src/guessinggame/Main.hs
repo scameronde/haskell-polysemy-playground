@@ -25,14 +25,14 @@ guessProg config = go True []
   where
     go :: Members '[Input Int, Input String, Trace] r => Bool -> [Bool] -> Sem r [Bool]
     go False gameResults = pure (reverse gameResults)
-    go True record = do
+    go True gameResults = do
       trace ""
       trace $ "I'm thinking of a number between " <> show (lowerBound config) <> " and " <> show (upperBound config) <> ". Guesses allowed: " <> show (maxTries config)
       numberToGuess <- input
       won <- doGuesses numberToGuess (maxTries config) (maxTries config)
       again <- wantToPlayAgain
       trace (if again then "Starting a new game!" else "Goodbye!")
-      go again (won:record)
+      go again (won:gameResults)
 
 
     doGuesses :: Members '[Input String, Trace] r => Int -> Int -> Int -> Sem r Bool
