@@ -18,24 +18,6 @@ data Config = Config { maxTries :: Int
 
 
 --
--- Interpreters
---
-
-runListInputForever :: [i] -> Sem (Input i ': r) a -> Sem r a
-runListInputForever is = fmap snd . runState (cycle is) . reinterpret \case
-  Input -> do
-    gotten <- get
-    let (s : ss) = gotten  -- safe because the state is infinite
-    put ss
-    pure s
-
-
-tracePrefix :: Member Trace r => Sem r a -> Sem r a
-tracePrefix = intercept \case
-  Trace msg -> trace $ "> " ++ msg
-
-
---
 -- Program
 --
 
@@ -93,6 +75,36 @@ guessProg config = go True []
       go again (won:record)
 
 
+--
+-- Interpreters
+--
+
+runListInputForever :: [b] -> Sem (Input b ': r) a -> Sem r a
+runListInputForever inputState program =
+  fmap snd result -- result is of type Sem r (s, a) and we are not interested in the state, but only the value
+  where
+    result = runState (cycle inputState) (reinterpretInputToState program)
+
+    reinterpretInputToState :: Sem (Input b ': r) a -> Sem (State [b] ': r) a
+    reinterpretInputToState = reinterpret \case
+      Input -> getOneValueFromState
+
+    getOneValueFromState :: Member (State [b]) r => Sem r b
+    getOneValueFromState = do
+      gotten <- get
+      let (s : ss) = gotten -- our state is infinite, so this is safe
+      put ss
+      pure s
+
+
+prefixTrace :: Member Trace r => Sem r a -> Sem r a
+prefixTrace = intercept \case
+  Trace msg -> trace $ "> " ++ msg
+
+
+--
+-- Tie program and interpreters together
+--
 
 main :: IO ()
 main = do
@@ -110,7 +122,7 @@ main = do
             = run
             . runOutputList
             . traceToOutput
-            . tracePrefix
+            . prefixTrace
             . runListInputForever randlist
             . runListInputForever inputlist
             $ guessProg conf
@@ -125,7 +137,7 @@ main = do
   putStrLn "====== Running IO program"
   iresult <- runM
            . traceToIO
-           . tracePrefix
+           . prefixTrace
            . runInputSem (embed $ randomRIO bounds)
            . runInputSem (embed getLine)
            $ guessProg conf
