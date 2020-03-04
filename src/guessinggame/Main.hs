@@ -5,7 +5,6 @@ module Main where
 
 import Polysemy
 import Polysemy.Input
-import Polysemy.Output
 import Polysemy.State
 import Polysemy.Trace
 import System.Random (newStdGen, randomRs, randomRIO)
@@ -121,8 +120,7 @@ main = do
     
     (progoutput :: [String], pureResult)
             = run
-            . runOutputList
-            . traceToOutput
+            . runTraceList
             . prefixTrace
             . runListInputForever listOfNumbersToGuess
             . runListInputForever listOfCannedAnswers
