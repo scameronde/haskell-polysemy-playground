@@ -19,7 +19,11 @@ data Config = Config { maxTries :: Int
 --
 -- Program
 --
-          
+     
+{-|
+  The guessing program uses 'Input String' to get all user entries, 'Input Int' for reading the number that 
+  should be guessed and 'Trace' to write some output.
+-}     
 guessProg :: Members '[Input String, Input Int, Trace] r => Config -> Sem r [Bool]
 guessProg config = go True []
   where
